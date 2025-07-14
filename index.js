@@ -18,7 +18,7 @@ app.post('/generate', async (req, res) => {
     const gptResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo',  // исправлено на доступную модель
         messages: [
           {
             role: 'system',
@@ -40,7 +40,7 @@ app.post('/generate', async (req, res) => {
       }
     );
 
-    const generatedPrompt = gptResponse.data.choices[0].message.content;
+    const generatedPrompt = gptResponse.data.choices[0].message.content.trim();
 
     // 2. Генерация изображения через Leonardo AI
     const leonardoResponse = await axios.post(
@@ -61,12 +61,20 @@ app.post('/generate', async (req, res) => {
       }
     );
 
-    const imageUrl = leonardoResponse.data.generations_by_pk.generated_images[0].url;
+    // Проверьте, что точно в ответе есть такой путь
+    const generations = leonardoResponse.data.generations_by_pk;
 
-    res.json({ url: generatedImageUrl });
+    if (!generations || !generations.generated_images || generations.generated_images.length === 0) {
+      return res.status(500).json({ error: 'Изображения не сгенерированы' });
+    }
+
+    const imageUrl = generations.generated_images[0].url;
+
+    // Отправляем URL клиенту
+    res.json({ url: imageUrl });
 
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error('Ошибка в /generate:', error.response?.data || error.message || error);
     res.status(500).json({ error: 'Ошибка при генерации изображения' });
   }
 });

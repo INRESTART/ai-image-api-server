@@ -63,7 +63,7 @@ app.post('/generate', async (req, res) => {
 
     const imageUrl = leonardoResponse.data.generations_by_pk.generated_images[0].url;
 
-    res.json({ imageUrl });
+    res.json({ url: generatedImageUrl });
 
   } catch (error) {
     console.error(error.response?.data || error.message);

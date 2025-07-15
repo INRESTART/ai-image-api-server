@@ -6,29 +6,26 @@ import axios from 'axios';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
 
+const PORT = process.env.PORT || 3000;
+
 app.post('/generate', async (req, res) => {
   const { userPrompt } = req.body;
+  if (!userPrompt) {
+    return res.status(400).json({ error: 'userPrompt обязателен' });
+  }
 
   try {
-    // 🔷 1. Генерация промта через OpenAI (ChatGPT)
+    // 1. Запрос промта у ChatGPT
     const gptResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4',
+        model: 'gpt-4o-mini', // или gpt-4.0 если доступно
         messages: [
-          {
-            role: 'system',
-            content: 'Ты помощник, который пишет промты для генерации изображений в Leonardo AI.'
-          },
-          {
-            role: 'user',
-            content: `Создай промт для leonardo.ai по следующему описанию: ${userPrompt}`
-          }
+          { role: 'system', content: 'Ты помощник, который пишет промты для генерации изображений в Leonardo AI.' },
+          { role: 'user', content: `Создай промт для leonardo.ai по следующему описанию: ${userPrompt}` }
         ],
         max_tokens: 500,
         temperature: 0.8
@@ -42,51 +39,70 @@ app.post('/generate', async (req, res) => {
     );
 
     const generatedPrompt = gptResponse.data.choices[0].message.content;
+    console.log('Сгенерированный промт:', generatedPrompt);
 
-// 2. Генерация изображения через Leonardo AI
-const leonardoResponse = await axios.post(
-  'https://cloud.leonardo.ai/api/rest/v1/generations',
-  {
-    prompt: generatedPrompt,
-    width: 512,
-    height: 512,
-    num_images: 1,
-    guidance_scale: 7,
-    num_inference_steps: 30
-  },
-  {
-    headers: {
-      Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
-      'Content-Type': 'application/json'
+    // 2. Отправка запроса на генерацию изображения в Leonardo AI
+    const leonardoResponse = await axios.post(
+      'https://cloud.leonardo.ai/api/rest/v1/generations',
+      {
+        prompt: generatedPrompt,
+        width: 512,
+        height: 512,
+        num_images: 1,
+        guidance_scale: 7,
+        num_inference_steps: 30
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const generationId = leonardoResponse.data.sdGenerationJob.generationId;
+    console.log('ID задачи генерации:', generationId);
+
+    // 3. Опрос результата с задержкой (polling)
+    let imageUrl = null;
+    for (let i = 0; i < 10; i++) { // максимум 10 попыток с паузой 3 сек
+      await new Promise(r => setTimeout(r, 3000));
+
+      const statusResponse = await axios.get(
+        `https://cloud.leonardo.ai/api/rest/v1/generations/${generationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`
+          }
+        }
+      );
+
+      const generation = statusResponse.data;
+
+      if (generation.generated_images && generation.generated_images.length > 0) {
+        imageUrl = generation.generated_images[0].url;
+        break;
+      }
+      console.log(`Попытка ${i + 1}: изображение ещё не готово`);
     }
-  }
-);
 
-// Выведем весь ответ от API в логи
-console.log('🔎 Ответ от Leonardo:', JSON.stringify(leonardoResponse.data, null, 2));
-    const generations = leonardoResponse.data.generations;
-
-    if (!generations || generations.length === 0 || !generations[0].generated_images || generations[0].generated_images.length === 0) {
-      return res.status(500).json({ error: 'Изображения не сгенерированы' });
+    if (!imageUrl) {
+      return res.status(500).json({ error: 'Изображения не сгенерированы за время ожидания' });
     }
 
-    const imageUrl = generations[0].generated_images[0].url;
-
-    // 🔷 3. Отправляем URL клиенту
+    // 4. Отправка ссылки клиенту
     res.json({ url: imageUrl });
 
   } catch (error) {
-    console.error('❌ Ошибка в /generate:', error?.response?.data || error?.message || error);
+    console.error('Ошибка в /generate:', error.response?.data || error.message || error);
     res.status(500).json({ error: 'Ошибка при генерации изображения' });
   }
 });
 
-// Корневая страница
 app.get('/', (req, res) => {
-  res.send('✅ AI Image API Server работает');
+  res.send('AI Image API Server работает ✅');
 });
 
-// Запуск сервера
 app.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на порту ${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
 });

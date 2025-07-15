@@ -1,5 +1,5 @@
 <?php
-$openai_key = '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';
+$openai_key = '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';
 
 $text = $_POST['text'] ?? 'ремонт холодильников';
 

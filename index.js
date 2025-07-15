@@ -42,36 +42,37 @@ app.post('/generate', async (req, res) => {
 
     const generatedPrompt = gptResponse.data.choices[0].message.content.trim();
 
-    // 2. Генерация изображения через Leonardo AI
-    const leonardoResponse = await axios.post(
-      'https://cloud.leonardo.ai/api/rest/v1/generations',
-      {
-        prompt: generatedPrompt,
-        width: 512,
-        height: 512,
-        num_images: 1,
-        guidance_scale: 7,
-        num_inference_steps: 30
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    // Проверьте, что точно в ответе есть такой путь
-    const generations = leonardoResponse.data.generations_by_pk;
-
-    if (!generations || !generations.generated_images || generations.generated_images.length === 0) {
-      return res.status(500).json({ error: 'Изображения не сгенерированы' });
+// 2. Генерация изображения через Leonardo AI
+const leonardoResponse = await axios.post(
+  'https://cloud.leonardo.ai/api/rest/v1/generations',
+  {
+    prompt: generatedPrompt,
+    width: 512,
+    height: 512,
+    num_images: 1,
+    guidance_scale: 7,
+    num_inference_steps: 30
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+      'Content-Type': 'application/json'
     }
+  }
+);
 
-    const imageUrl = generations.generated_images[0].url;
+// Проверим наличие сгенерированных изображений
+const generations = leonardoResponse.data.generations;
 
-    // Отправляем URL клиенту
-    res.json({ url: imageUrl });
+if (!generations || generations.length === 0 || !generations[0].generated_images || generations[0].generated_images.length === 0) {
+  return res.status(500).json({ error: 'Изображения не сгенерированы' });
+}
+
+// Получаем URL изображения
+const imageUrl = generations[0].generated_images[0].url;
+
+// Отправляем клиенту
+res.json({ url: imageUrl });
 
   } catch (error) {
     console.error('Ошибка в /generate:', error.response?.data || error.message || error);

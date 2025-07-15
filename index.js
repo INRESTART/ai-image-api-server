@@ -18,7 +18,7 @@ app.post('/generate', async (req, res) => {
     const gptResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo',  // исправлено на доступную модель
+        model: 'o4-mini-2025-04-16',
         messages: [
           {
             role: 'system',

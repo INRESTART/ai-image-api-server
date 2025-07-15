@@ -43,25 +43,27 @@ app.post('/generate', async (req, res) => {
 
     const generatedPrompt = gptResponse.data.choices[0].message.content;
 
-    // 🔷 2. Генерация изображения через Leonardo AI
-    const leonardoResponse = await axios.post(
-      'https://cloud.leonardo.ai/api/rest/v1/generations',
-      {
-        prompt: generatedPrompt,
-        width: 512,
-        height: 512,
-        num_images: 1,
-        guidance_scale: 7,
-        num_inference_steps: 30
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+// 2. Генерация изображения через Leonardo AI
+const leonardoResponse = await axios.post(
+  'https://cloud.leonardo.ai/api/rest/v1/generations',
+  {
+    prompt: generatedPrompt,
+    width: 512,
+    height: 512,
+    num_images: 1,
+    guidance_scale: 7,
+    num_inference_steps: 30
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+      'Content-Type': 'application/json'
+    }
+  }
+);
 
+// Выведем весь ответ от API в логи
+console.log('🔎 Ответ от Leonardo:', JSON.stringify(leonardoResponse.data, null, 2));
     const generations = leonardoResponse.data.generations;
 
     if (!generations || generations.length === 0 || !generations[0].generated_images || generations[0].generated_images.length === 0) {

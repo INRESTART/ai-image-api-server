@@ -2,16 +2,16 @@ FROM php:8.1-cli
 
 WORKDIR /app
 
-# Устанавливаем Composer
+# Установка Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Копируем описание зависимостей
-COPY composer.json composer.lock* /app/
+# Копируем composer.json (и lock-файл, если есть)
+COPY composer.json /app/
 
-# Устанавливаем библиотеки
-RUN composer install --no-dev --optimize-autoloader
+# Устанавливаем зависимости
+RUN composer install --no-dev
 
-# Копируем весь проект
+# Копируем всё остальное
 COPY . .
 
 EXPOSE 10000

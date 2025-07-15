@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Генератор картинки для Авито</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Создай обложку для Авито</h1>
+    <form id="form">
+      <input type="text" name="text" placeholder="Например: ремонт холодильников" required />
+      <button type="submit">Генерировать</button>
+    </form>
+    <div id="result"></div>
+  </div>
+  <script>
+    const form = document.getElementById('form');
+    const result = document.getElementById('result');
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      result.innerHTML = '⏳ Генерация...';
+
+      const formData = new FormData(form);
+      const response = await fetch('generate.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.text();
+
+      if (data.startsWith('http')) {
+        result.innerHTML = `<img src="${data}" alt="Сгенерированное изображение" />`;
+      } else {
+        result.innerHTML = `<p style='color:red;'>${data}</p>`;
+      }
+    };
+  </script>
+</body>
+</html>

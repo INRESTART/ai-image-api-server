@@ -1,5 +1,4 @@
 <?php
-require 'vendor/autoload.php';
 
 $openai_key = $_ENV['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'];
 $leonardo_key = $_ENV['c70f6c43-36ee-4ef3-9d67-4a1524c73c78'];

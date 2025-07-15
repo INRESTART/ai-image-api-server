@@ -1,10 +1,10 @@
 <?php
-$openai_key = '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';
+$openai_key = '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';
 
 $text = $_POST['text'] ?? 'ремонт холодильников';
 
 $payload = [
-    "model" => "gpt-4",
+    "model" => "gpt-3.5-turbo",
     "messages" => [
         ["role" => "system", "content" => "You are a prompt generator for image AI."],
         ["role" => "user", "content" => "Create a detailed prompt for Leonardo AI to generate an image based on this service: \"$text\""]

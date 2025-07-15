@@ -13,7 +13,7 @@ if (empty($text)) {
 
 // Шаг 1: Получаем промт для Леонардо от GPT
 $promptRequest = [
-    "model" => "gpt-4.1",
+    "model" => "gpt-4"",
     "messages" => [
         ["role" => "system", "content" => "You are a prompt generator for image AI."],
         ["role" => "user", "content" => "Create a detailed prompt for Leonardo AI to generate an image based on this service: \"$text\""]

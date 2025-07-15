@@ -20,8 +20,39 @@ $promptRequest = [
     ]
 ];
 
-$gptResponse = sendRequestToGPT($openai_key, $promptRequest);
-$prompt = $gptResponse['choices'][0]['message']['content'] ?? null;
+function sendRequestToGPT($key, $payload) {
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => [
+            "Authorization: Bearer $key",
+            "Content-Type: application/json"
+        ],
+        CURLOPT_POSTFIELDS => json_encode($payload)
+    ]);
+    $result = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        echo "CURL ошибка: " . curl_error($ch);
+        exit;
+    }
+
+    curl_close($ch);
+
+    $decoded = json_decode($result, true);
+
+    if (!$decoded) {
+        echo "Ошибка JSON декодирования. Ответ сервера: $result";
+        exit;
+    }
+
+    // Временно выведем ответ для диагностики
+    echo "<pre>Ответ GPT:\n";
+    print_r($decoded);
+    echo "</pre>";
+
+    return $decoded;
+}$prompt = $gptResponse['choices'][0]['message']['content'] ?? null;
 
 if (!$prompt) {
     echo "Ошибка: не удалось получить промт от GPT.";
